@@ -140,3 +140,35 @@ class ManyToOneBooking(Booking):
     slot = models.ForeignKey(Slot,
                                 related_name='many_to_one_bookings',
                                 on_delete=models.CASCADE)
+
+
+class WebhookTarget(TimeStampedUUIDModel):
+    url = models.URLField(max_length=255, default='https://webhook.site/709e296b-89eb-4cbc-b26f-8cbb8b6ddefc')
+    event = models.CharField(max_length=30)
+
+    customer = models.ForeignKey(Customer,
+                                related_name='webhook_targets',
+                                on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.customer.user.username
+
+    class Meta:
+        ordering = ["-created"]
+
+class Log(TimeStampedUUIDModel):
+    response_message = models.CharField(max_length=1000,blank=True)
+    response_status = models.IntegerField(blank=True, null=True)
+    response_content_type = models.CharField(max_length=1000, blank=True)
+    is_sent = models.BooleanField(default=False)
+    attempt = models.IntegerField()
+
+    webhook_target = models.ForeignKey(WebhookTarget,
+                                        related_name='logs',
+                                        on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{webhook} - {attempt} - {status}".format(webhook=self.webhook_target,attempt=self.attempt,status=str(self.is_sent))
+
+    class Meta:
+        ordering = ["-created"]
